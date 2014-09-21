@@ -15,16 +15,14 @@ import android.widget.ListView;
 import android.widget.Spinner;
 import com.karelherink.flickrsearch.feed.FlickrFeed;
 import com.karelherink.flickrsearch.util.CacheResultListener;
+import com.karelherink.flickrsearch.util.Utils;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
 
 public class Main extends Activity implements CacheResultListener<FlickrFeed> {
 
     public static final String TAG = Main.class.getName();
-    public static final String BASE_URL = "https://api.flickr.com/services/feeds/photos_public.gne?format=json";
 
     private EditText editText;
     private ListView listView;
@@ -56,7 +54,7 @@ public class Main extends Activity implements CacheResultListener<FlickrFeed> {
         searchModeSpinner = (Spinner) findViewById(R.id.searchModeSpinner);
         ArrayAdapter spinnerAdapter = new ArrayAdapter<SearchModeInfo>(this,
                 android.R.layout.simple_spinner_item,
-                getSearchModes());
+                Utils.getSearchModes(this));
         spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         searchModeSpinner.setAdapter(spinnerAdapter);
         searchModeSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -99,7 +97,7 @@ public class Main extends Activity implements CacheResultListener<FlickrFeed> {
         String tags = editText.getText().toString().trim();
         try {
             SearchModeInfo searchModeInfo = (SearchModeInfo) searchModeSpinner.getSelectedItem();
-            searchCache.requestResult(buildSearchUrl(tags, searchModeInfo));
+            searchCache.requestResult(Utils.buildSearchUrl(tags, searchModeInfo));
         } catch (MalformedURLException e) {
             Log.v(TAG, "unable to for a URL using: " + tags, e);
         }
@@ -122,7 +120,7 @@ public class Main extends Activity implements CacheResultListener<FlickrFeed> {
                 try {
                     searchString = editText.getText().toString();
                     SearchModeInfo searchModeInfo = (SearchModeInfo) searchModeSpinner.getSelectedItem();
-                    URL currentSearchUrl = buildSearchUrl(searchString, searchModeInfo);
+                    URL currentSearchUrl = Utils.buildSearchUrl(searchString, searchModeInfo);
                     if (currentSearchUrl.equals(requestUrl)) {
                         ((FlickrFeedListAdapter) listView.getAdapter()).setFlickrFeed(result);
                     }
@@ -131,37 +129,6 @@ public class Main extends Activity implements CacheResultListener<FlickrFeed> {
                 }
             }
         });
-    }
-
-    private static URL buildSearchUrl(String tags, SearchModeInfo searchModeInfo) throws MalformedURLException {
-        Uri.Builder builder = Uri.parse(BASE_URL).buildUpon();
-        builder.appendQueryParameter("tags", toCommaSeaparated(tags));
-        builder.appendQueryParameter("tagmode", searchModeInfo.getParam());
-        return new URL(builder.build().toString());
-    }
-
-    private static String toCommaSeaparated(String spaceSeparated) {
-        String[] tokens = spaceSeparated.split("[, ]");
-        if (tokens.length == 0 || tokens.length == 1) {
-            return spaceSeparated;
-        }
-        StringBuilder builder = new StringBuilder();
-        for (int i = 0; i < tokens.length -1; i++) {
-            builder.append(tokens[i]).append(",");
-        }
-        builder.append(tokens[tokens.length -1]);
-        return builder.toString();
-    }
-
-    private List<SearchModeInfo> getSearchModes() {
-        List<SearchModeInfo> searchModes = new ArrayList<SearchModeInfo>();
-        String[] data = getResources().getStringArray(R.array.search_mode);
-        for(String s : data){
-            String[] fields = s.split(",");
-            searchModes.add(new SearchModeInfo(fields[0], fields[1]));
-        }
-
-        return searchModes;
     }
 
 }

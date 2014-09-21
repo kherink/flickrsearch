@@ -1,11 +1,10 @@
 package com.karelherink.flickrsearch;
 
-import android.util.Log;
 import com.karelherink.flickrsearch.util.Cache;
 import com.karelherink.flickrsearch.util.CacheResultListener;
 import com.karelherink.flickrsearch.util.LruSizeLimitedOrderedMap;
 import com.karelherink.flickrsearch.util.ResourceReader;
-import com.karelherink.flickrsearch.util.UIUtils;
+import com.karelherink.flickrsearch.util.Utils;
 
 import java.io.IOException;
 import java.net.URL;
@@ -13,8 +12,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class SimpleUrlGetResponseCache<T> implements Cache<T>, Runnable {
-
-    public static final String TAG = SimpleUrlGetResponseCache.class.getName();
 
     private final List<URL> requests = new ArrayList<URL>();
 
@@ -41,7 +38,6 @@ public class SimpleUrlGetResponseCache<T> implements Cache<T>, Runnable {
 
     @Override
     public void requestResult(final URL url) {
-        Log.v(TAG, "requestResult for " + url);
         T response = lruCacheImpl.get(url);
         if (response != null && cacheResultListener != null) {
             cacheResultListener.onResultAvailable(url, response);
@@ -67,7 +63,9 @@ public class SimpleUrlGetResponseCache<T> implements Cache<T>, Runnable {
                     }
                 }
                 url = requests.remove(0);
-                Log.v(TAG, "going to fetch: " + url);
+                if (url == null) {
+                    return;
+                }
             }
             T response = lruCacheImpl.get(url);
             if (response == null) {
@@ -75,8 +73,7 @@ public class SimpleUrlGetResponseCache<T> implements Cache<T>, Runnable {
                     response = resourceReader.readResource(url, clazz);
                     lruCacheImpl.put(url, response);
                 } catch (IOException e) {
-                    Log.w(TAG, "Unable to read feed from: " + url, e);
-                    UIUtils.toastOnUIThread(R.string.network_err);
+                    Utils.toastOnUIThread(R.string.network_err);
                 }
             }
             if (response != null && cacheResultListener != null) {
